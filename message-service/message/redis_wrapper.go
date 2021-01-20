@@ -1,4 +1,4 @@
-package message_service
+package message
 
 import (
 	"context"
@@ -13,7 +13,7 @@ func getOffsetKey(deviceId string) string {
 
 func getConsumeOffset(key string) int {
 	//rdb.SetNX(context.Background(), key, 1, time.Second)
-	res,err := rdb.Get(context.Background(), key).Result()
+	res,err := RedisClient.Get(context.Background(), key).Result()
 	if err != nil {
 		panic(err)
 	}
@@ -26,13 +26,13 @@ func getConsumeOffset(key string) int {
 
 func updateConsumeOffset(key string, newOffset int64) error {
 	fmt.Printf("Setting %s\n", key)
-	return rdb.Set(context.Background(), key, newOffset, time.Hour).Err()
+	return RedisClient.Set(context.Background(), key, newOffset, time.Hour).Err()
 }
 
 func getOnlineMessages(deviceId string) ([]string, int, int) {
 	offsetKey :=getOffsetKey(deviceId)
 	offset :=getConsumeOffset(offsetKey)
-	res,err := rdb.LRange(context.Background(),deviceId,0,int64(offset)).Result()
+	res,err := RedisClient.LRange(context.Background(),deviceId,0,int64(offset)).Result()
 	if err != nil {
 		panic(err)
 	}

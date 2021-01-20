@@ -16,7 +16,7 @@ func main() {
 	header:= http.Header{}
 	header.Set("whoimi","24601")
 
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), header)
 	if err != nil {
 		log.Fatal("dial:", err)
 	}
@@ -36,11 +36,11 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(time.Second *2)
 	defer ticker.Stop()
 
 
-	msgBody := `{"sender":"%v", "channel":"messgae", "session":"24602", "body":"this is body"}`
+	msgBody := `{"sender":"%v", "channel":"messgae", "session":"24601", "body":"this is body"}`
 	for {
 		select {
 		case <-done:

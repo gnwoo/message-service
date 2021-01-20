@@ -14,6 +14,8 @@ require (
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/tidwall/gjson v1.6.7 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.16.0
 	golang.org/x/sys v0.0.0-20201231184435-2d18734c6014 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )

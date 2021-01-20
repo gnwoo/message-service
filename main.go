@@ -1,9 +1,11 @@
 package main
 
 import (
+	"gwnoo/logger"
 	"gwnoo/message-service"
 )
 
 func main() {
-	message_service.Start()
+	defer logger.Logger.Sync()
+ 	message_service.Start()
 }

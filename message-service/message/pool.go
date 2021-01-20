@@ -1,21 +1,17 @@
-package pool
+package message
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"gwnoo/logger"
 	"time"
 )
+
 const (
-	// Time allowed to write a message to the peer.
 	writeWait = 2 * time.Second
-
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 5 * time.Second
-
-	// Send pings to peer with this period. Must be less than pongWait.
+	pongWait = 40 * time.Second
 	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 )
 
@@ -34,8 +30,10 @@ var WsConnPool = WsPool{
 	}
 
 var heartbeatTicker *time.Ticker
-
+var sugarlog = logger.Logger.Sugar()
 func init()  {
+	initRocketMQ()
+	//initRedis()
 	heartbeatTicker = time.NewTicker(pingPeriod)
 	go runHeartbeat()
 }
@@ -57,6 +55,7 @@ func (c *WsConn)Ping() {
 }
 
 func (p *WsPool) NewConn(id string, c *websocket.Conn) *WsConn {
+	sugarlog.Infow("New connection", "User id", id)
 	newConn := &WsConn{
 		id: id,
 		c:  c,
@@ -66,7 +65,7 @@ func (p *WsPool) NewConn(id string, c *websocket.Conn) *WsConn {
 }
 
 func (p *WsPool) RemoveConn(c *WsConn) {
-	fmt.Printf("Remove Conn %v\n", c.id)
+	sugarlog.Infow("Remove Conn", "User id",c.id)
 	err := c.c.Close()
 	if err != nil {
 		panic(err)
@@ -92,19 +91,24 @@ func (c *WsConn)ReadConn() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				panic(err)
 			}
-			fmt.Println("Connection corrupted")
+			sugarlog.Infow("Connection corrupted", "user id", c.id)
 			break
 		}
-		fmt.Println(string(msgVal))
+		sugarlog.Debugw("Received message", "body", string(msgVal))
+		SendChatMessage(msgVal)
 	}
 }
 
-func (c *WsConn)Write(msgType int, payload []byte) error {
+func (c *WsConn)write(msgType int, payload []byte) error {
 	c.c.SetWriteDeadline(time.Now().Add(writeWait))
 	return c.c.WriteMessage(msgType, payload)
 }
 
 
-//func (p *WsPool) SendTo(id string, msg string) {
-//	p.Conns[id].Write(websocket.TextMessage, []byte(msg))
-//}
+func (p *WsPool) SendTo(id string, msg []byte) error {
+	if v,ok := p.Conns[id]; ok {
+		v.write(websocket.TextMessage, msg)
+		return nil
+	}
+	return errors.New("user not found in connection pool")
+}
